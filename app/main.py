@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
 from app.ingestion import ingest_document
-from app.schemas import DocumentCreate, DocumentResponse
+from app.rag import answer_question
 from app.retrieval import search_chunks
+from app.schemas import AskRequest, AskResponse, DocumentCreate, DocumentResponse
 
 app = FastAPI()
 
@@ -64,3 +65,10 @@ async def search(
         }
         for result in chunks
     ]
+
+@app.post("/ask", response_model=AskResponse)
+async def ask(
+    request: AskRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+):
+    return await answer_question(request.question, session)
