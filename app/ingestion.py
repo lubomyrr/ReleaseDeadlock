@@ -1,4 +1,7 @@
 ﻿import hashlib
+import re
+from datetime import date, datetime
+from pathlib import Path
 
 from fastapi.concurrency import run_in_threadpool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -8,6 +11,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.embeddings import generate_embeddings
 from app.models import Chunk, Document
+
+
+def extract_patch_date(filename: str) -> date | None:
+    stem = Path(filename).stem
+    if not re.fullmatch(r"patch_\d{4}_\d{2}_\d{2}", stem):
+        return None
+    try:
+        return datetime.strptime(stem, "patch_%Y_%m_%d").date()
+    except ValueError:
+        return None
 
 
 def hash_document(content: str) -> str:
@@ -36,7 +49,11 @@ async def ingest_document(
         if len(embeddings) != len(chunks) or any(len(vector) != 384 for vector in embeddings):
             raise ValueError("Expected one 384-dimensional embedding per chunk")
 
-        document = Document(filename=filename, content_hash=content_hash)
+        document = Document(
+            filename=filename,
+            content_hash=content_hash,
+            patch_date=extract_patch_date(filename),
+        )
         document.chunks = [
             Chunk(chunk_index=index, content=chunk, embedding=embedding)
             for index, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=True))

@@ -1,0 +1,62 @@
+[
+  {
+    "question": "What changed about Rat King's Scrap Grenade damage?",
+    "expected_document": "patch_2026_10_05.md"
+  },
+  {
+    "question": "What happened to Baba's Brew barrier?",
+    "expected_document": "patch_2026_10_14.md"
+  },
+  {
+    "question": "How did Rat King's Rat Swarm base cooldown change?",
+    "expected_document": "patch_2026_10_05.md"
+  },
+  {
+    "question": "What changes were made to Sinclair's Rabbit Hex radius?",
+    "expected_document": "patch_2026_10_05.md"
+  },
+  {
+    "question": "When does the first Ranked season end after the schedule change?",
+    "expected_document": "patch_2026_10_06.md"
+  },
+  {
+    "question": "What does Baba's Threadsap do to enemies?",
+    "expected_document": "patch_2026_10_06.md"
+  },
+  {
+    "question": "Which Solomon ability protects allies and allows tactical retreats?",
+    "expected_document": "patch_2026_10_09.md"
+  },
+  {
+    "question": "What map traversal features were added in the October 9 update?",
+    "expected_document": "patch_2026_10_09.md"
+  },
+  {
+    "question": "What does Deadman Danny's Jettison Fuel ability do?",
+    "expected_document": "patch_2026_10_13.md"
+  },
+  {
+    "question": "How did Deadman Danny's Strix Salvo cooldown change?",
+    "expected_document": "patch_2026_10_14.md"
+  },
+  {
+    "question": "How did Radiant Regeneration spirit scaling change?",
+    "expected_document": "patch_2026_10_14.md"
+  },
+  {
+    "question": "How do players move themselves as the king using Solomon's Kingside Knight after the update?",
+    "expected_document": "patch_2026_10_16.md"
+  },
+  {
+    "question": "Which abilities are listed for Violet in her release update?",
+    "expected_document": "patch_2026_10_16.md"
+  },
+  {
+    "question": "How does Nurse Harrow's Leech Therapy work?",
+    "expected_document": "patch_2026_10_20.md"
+  },
+  {
+    "question": "How many votes were cast during the City Never Sleeps event?",
+    "expected_document": "patch_2026_10_20.md"
+  }
+]

@@ -9,12 +9,3 @@ def get_model():
 
 def generate_embeddings(texts: list[str]) -> list[list[float]]:
     return get_model().encode(texts).tolist()
-
-if __name__ == "__main__":
-    vectors = generate_embeddings([
-        "Weapon recoil reduced",
-        "New map added"
-    ])
-
-    print(len(vectors))       # 2
-    print(len(vectors[0]))    # 384
