@@ -1,3 +1,4 @@
+from datetime import date
 from typing import NamedTuple
 
 from fastapi.concurrency import run_in_threadpool
@@ -17,7 +18,8 @@ class SearchResult(NamedTuple):
 async def search_chunks(
     question: str,
     session: AsyncSession,
-    top_k: int = 5,
+    top_k: int = 3,
+    patch_date: date | None = None,
 ) -> list[SearchResult]:
     if not question.strip():
         raise ValueError("Question must not be empty")
@@ -33,8 +35,10 @@ async def search_chunks(
             Chunk.embedding.cosine_distance(question_embedding).label("distance"),
         )
         .join(Document, Chunk.document_id == Document.id)
-        .order_by("distance")
-        .limit(top_k)
     )
+    if patch_date is not None:
+        stmt = stmt.where(Document.patch_date == patch_date)
+
+    stmt = stmt.order_by("distance").limit(top_k)
     result = await session.execute(stmt)
     return [SearchResult(chunk, filename, float(distance)) for chunk, filename, distance in result.all()]
