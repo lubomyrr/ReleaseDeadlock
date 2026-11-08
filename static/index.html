@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReleaseDeadlock</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <section class="chat" aria-label="ReleaseDeadlock chat">
+    <header>
+      <span class="logo" aria-hidden="true">☰</span>
+      <span>ReleaseDeadlock</span>
+      <span class="badge">RAG</span>
+    </header>
+    <main>
+      <div id="welcome">
+        <h1>Ask about Deadlock updates</h1>
+        <p>Search patch notes with AI-powered answers.</p>
+      </div>
+      <div id="messages" class="messages" aria-live="polite" hidden></div>
+    </main>
+    <form id="question-form">
+      <textarea aria-label="Your question" placeholder="What changed in the latest patch?" rows="1"></textarea>
+      <button type="submit" aria-label="Send question">↑</button>
+    </form>
+    <footer id="status" role="status">Ask a question about the patch notes.</footer>
+  </section>
+  <script src="/static/script.js"></script>
+</body>
+</html>
