@@ -1,8 +1,11 @@
 from datetime import date
+from pathlib import Path
 from typing import Annotated
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from ollama import ResponseError
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -16,6 +19,13 @@ from app.retrieval import search_chunks
 from app.schemas import AskRequest, AskResponse, DocumentCreate, DocumentResponse
 
 app = FastAPI()
+static_dir = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def index():
+    return FileResponse(static_dir / "index.html")
 
 
 class HealthCheck(BaseModel):
