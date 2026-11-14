@@ -12,9 +12,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent import answer_question
 from app.database import get_session
 from app.ingestion import ingest_document
-from app.rag import answer_question
 from app.retrieval import search_chunks
 from app.schemas import AskRequest, AskResponse, DocumentCreate, DocumentResponse
 
@@ -89,14 +89,9 @@ async def search(
 @app.post("/ask", response_model=AskResponse)
 async def ask(
     request: AskRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
 ):
     try:
-        return await answer_question(
-            question=request.question,
-            session=session,
-            top_k=3,
-        )
+        return await answer_question(question=request.question)
     except (httpx.TimeoutException, TimeoutError) as exc:
         raise HTTPException(status_code=504, detail="Ollama request timed out") from exc
     except (ConnectionError, httpx.RequestError) as exc:
