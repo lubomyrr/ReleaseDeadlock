@@ -38,9 +38,7 @@ class AskEndpointTests(unittest.TestCase):
             "answer": answer,
             "sources": [{"filename": "patch_2026_10_05.md", "chunk_id": str(chunk_id)}],
         })
-        self.mock_answer.assert_awaited_once_with(
-            question=question, session=self.session, top_k=3,
-        )
+        self.mock_answer.assert_awaited_once_with(question=question)
 
     def test_ask_rejects_missing_empty_and_blank_questions(self):
         for payload in ({}, {"question": ""}, {"question": " \t\n"}):
