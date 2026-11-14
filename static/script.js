@@ -20,13 +20,12 @@ form.addEventListener('submit', async function (event) {
 
   if (!question || sendButton.disabled) return;
 
-  console.log(question);
   welcome.hidden = true;
   messages.hidden = false;
   addMessage(question, 'user');
   questionInput.value = '';
   sendButton.disabled = true;
-  statusElement.textContent = 'Waiting for an answer…';
+  statusElement.textContent = 'Preparing an answer…';
 
   try {
     const response = await fetch('/ask', {
@@ -43,8 +42,10 @@ form.addEventListener('submit', async function (event) {
     if (typeof data.answer !== 'string' || !Array.isArray(data.sources)) {
       throw new Error('Unexpected response from the server');
     }
+    const answer = data.answer.replace(/`([^`]+)`/g, '$1');
     const sources = [...new Set(data.sources.map(source => source.filename).filter(Boolean))];
-    addMessage(data.answer + (sources.length ? `\n\nSources: ${sources.join(', ')}` : ''), 'assistant');
+    const missingSources = sources.filter(source => !answer.includes(source));
+    addMessage(answer + (missingSources.length ? `\n\nSources: ${missingSources.join(', ')}` : ''), 'assistant');
     statusElement.textContent = 'Ask a question about the patch notes.';
   } catch (error) {
     addMessage(`Could not get an answer: ${error.message}`, 'error');
