@@ -55,11 +55,3 @@ python -m scripts.upload_patch
 | `POST /documents` | Index a document; skip identical content |
 | `GET /search?question=...` | Retrieve chunks |
 | `POST /ask` | Answer with `sources`, `session_id`, `trace` and `stop_reason` |
-
-## Evaluation
-
-```bash
-python -m evel.run
-python -m eval.evaluate
-python -m unittest discover -s tests -v
-```
