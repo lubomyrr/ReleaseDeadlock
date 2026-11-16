@@ -96,3 +96,74 @@ async def search_patch_notes(
         result["errors"].append({"code": "database_unavailable", "message": "Database is unavailable or not configured"})
 
     return result
+
+
+async def get_latest_patch() -> dict:
+    """Return all loaded documents on the latest known patch date."""
+    result = {"data": [], "sources": [], "coverage": {"freshness": "unknown"}, "errors": []}
+    try:
+        from app.database import SessionLocal
+
+        async with SessionLocal() as session:
+            latest = await session.scalar(select(Document.patch_date).where(
+                Document.patch_date.is_not(None)
+            ).order_by(Document.patch_date.desc()).limit(1))
+            if latest is not None:
+                documents = (await session.scalars(select(Document).where(
+                    Document.patch_date == latest
+                ).order_by(Document.filename, Document.id))).all()
+                result["data"] = [
+                    {"document_id": str(doc.id), "filename": doc.filename, "patch_date": latest.isoformat()}
+                    for doc in documents
+                ]
+                result["sources"] = result["data"].copy()
+    except (SQLAlchemyError, OSError, TimeoutError, KeyError):
+        result["errors"].append({"code": "database_unavailable", "message": "Database is unavailable or not configured"})
+    return result
+
+
+async def compare_versions(hero: str, date_from: str, date_to: str) -> dict:
+    """Collect matching excerpts in an inclusive interval, not hero snapshots."""
+    result = {
+        "data": [], "sources": [],
+        "coverage": {
+            "truncated": False,
+            "complete_history": "unknown",
+            "undated_documents_excluded": True,
+            "matching": "hero name in chunk text or section heading",
+        },
+        "errors": [],
+    }
+    if not isinstance(hero, str) or not hero.strip():
+        result["errors"].append({"code": "invalid_hero", "message": "hero must not be empty"})
+        return result
+    try:
+        start, end = date.fromisoformat(date_from), date.fromisoformat(date_to)
+        if start > end:
+            raise ValueError("date_from must not be later than date_to")
+    except (TypeError, ValueError) as exc:
+        result["errors"].append({"code": "invalid_date", "message": str(exc)})
+        return result
+
+    try:
+        from app.database import SessionLocal
+
+        pattern = r"(^|[^[:alnum:]_])" + re.escape(hero.strip()) + r"([^[:alnum:]_]|$)"
+        stmt = (
+            select(Chunk, Document).join(Document, Chunk.document_id == Document.id)
+            .where(Document.patch_date >= start, Document.patch_date <= end, Chunk.content.op("~*")(pattern))
+            .order_by(Document.patch_date, Document.filename, Document.id, Chunk.chunk_index)
+        )
+        async with SessionLocal() as session:
+            rows = (await session.execute(stmt)).all()
+        for chunk, document in rows:
+            source = {
+                "chunk_id": str(chunk.id), "document_id": str(document.id),
+                "filename": document.filename, "patch_date": document.patch_date.isoformat(),
+                "chunk_index": chunk.chunk_index,
+            }
+            result["sources"].append(source)
+            result["data"].append({"content": chunk.content, "source": source})
+    except (SQLAlchemyError, OSError, TimeoutError, KeyError):
+        result["errors"].append({"code": "database_unavailable", "message": "Database is unavailable or not configured"})
+    return result

@@ -21,14 +21,18 @@ class DocumentResponse(BaseModel):
 
 
 class AskRequest(BaseModel):
-    question: NonEmptyText
+    question: NonEmptyText = Field(max_length=4000)
+    session_id: UUID | None = None
 
 
 class SourceResponse(BaseModel):
     filename: str
-    chunk_id: UUID
+    chunk_id: UUID | None = None
 
 
 class AskResponse(BaseModel):
     answer: str
     sources: list[SourceResponse]
+    session_id: UUID
+    trace: list[dict] = Field(default_factory=list)
+    stop_reason: str = "completed"
