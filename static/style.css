@@ -183,6 +183,12 @@ button:hover {
   background: #cbd9f0;
 }
 
+#new-chat {
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
 button:focus-visible {
   outline: 2px solid #91b9ff;
   outline-offset: 3px;
