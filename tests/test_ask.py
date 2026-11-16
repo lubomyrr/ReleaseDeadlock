@@ -25,20 +25,24 @@ class AskEndpointTests(unittest.TestCase):
     def test_ask_returns_answer_and_sources(self):
         question = "What changed about Scrap Grenade damage?"
         chunk_id = UUID("e4f82c4a-0458-458d-8ab0-6c2ac629c0ea")
+        session_id = UUID("810c44c4-669e-4781-91d0-ab830da6956e")
         answer = "Damage increased from 65 to 70 [patch_2026_10_05.md]."
 
         self.mock_answer.return_value = {
             "answer": answer,
             "sources": [{"filename": "patch_2026_10_05.md", "chunk_id": chunk_id}],
         }
-        response = self.client.post("/ask", json={"question": question})
+        response = self.client.post("/ask", json={"question": question, "session_id": str(session_id)})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {
             "answer": answer,
             "sources": [{"filename": "patch_2026_10_05.md", "chunk_id": str(chunk_id)}],
+            "session_id": str(session_id),
+            "trace": [],
+            "stop_reason": "completed",
         })
-        self.mock_answer.assert_awaited_once_with(question=question)
+        self.mock_answer.assert_awaited_once_with(question=question, session_id=session_id)
 
     def test_ask_rejects_missing_empty_and_blank_questions(self):
         for payload in ({}, {"question": ""}, {"question": " \t\n"}):
