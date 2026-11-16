@@ -1,82 +1,65 @@
-# ReleaseNotes RAG
+# ReleaseDeadlock
 
-RAG API for **Deadlock** patch notes. Ask about updates and get answers with source references.
+[![CI](https://github.com/lubomyrr/ReleaseDeadlock/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lubomyrr/ReleaseDeadlock/actions)
 
-**Stack:** Python · FastAPI · SQLAlchemy + Alembic · PostgreSQL + pgvector · MiniLM · Ollama (`qwen3.5:4b`)
+A local AI chat for Deadlock patch notes: ask about changes, dates and hero history, with source references and tool traces.
 
-## Architecture
+**Stack:** Python 3.11+ · FastAPI · Pydantic · LangGraph · Ollama (`qwen3.5:4b`) · Sentence Transformers (`all-MiniLM-L6-v2`) · LangChain text splitters · PostgreSQL + pgvector · SQLAlchemy · Alembic · HTML/CSS/JavaScript · Docker Compose · GitHub Actions.
+
+## How it works
 
 ```text
-Patch notes (.md) → chunking → MiniLM embeddings → PostgreSQL + pgvector
-                                                        ↑
-Question → MiniLM embedding → cosine search (top 3 chunks)
-                                                        ↓
-                                                Context + sources
-                                                        ↓
-                                                Ollama → answer
+Markdown patches → heading-aware chunks → MiniLM embeddings → PostgreSQL/pgvector
+Question + recent chat history → LangGraph/Ollama → tools → excerpts + sources → answer
 ```
+
+The model chooses tools automatically, with up to 3 calls and a shared 120-second deadline per question:
+
+| Tool | Purpose |
+| --- | --- |
+| `search_patch_notes` | Semantic search, up to 3 chunks; optional hero and inclusive date bounds |
+| `get_latest_patch` | Date and filenames of the latest loaded patch; no patch body |
+| `compare_versions` | Chronological hero excerpts within inclusive dates; not state snapshots |
+
+Tools query the database; Ollama selects calls and writes the answer. Loaded history can be incomplete, and the latest loaded patch does not guarantee current game data.
+
+Chat history is stored in PostgreSQL. Omit `session_id` on the first `/ask` request, then reuse the returned UUID. Each question receives up to 6 previous question/answer pairs, capped at 8,000 characters of complete pairs. A new question has its own 4,000-character limit. Tool results and traces are not retained in history; patch facts must be checked again. **New chat** or a page reload starts a fresh session in the web UI.
 
 ## Run locally
 
-Requires **Python 3.11+**, **Docker**, and **Ollama**.
-Start Ollama locally on `http://localhost:11434`. MiniLM downloads on first use.
-
-Install Python dependencies from `requirements.txt`:
+Requires Python, Docker Desktop and Ollama. Docker Compose runs PostgreSQL only; Ollama and the API run on the host.
 
 ```bash
 python -m venv .venv
-# Windows PowerShell: .venv\Scripts\Activate.ps1
+# PowerShell: .venv\Scripts\Activate.ps1
 # macOS/Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
 ollama pull qwen3.5:4b
 ```
 
-Create `.env` in the project root:
-
-```dotenv
-POSTGRES_PASSWORD=change-me
-```
+Set `POSTGRES_PASSWORD` in a local `.env` file, start Ollama on `localhost:11434`, then:
 
 ```bash
-docker compose up -d
+docker compose up -d db
 python -m app.init_db
-uvicorn app.main:app --reload
-```
-
-`app.init_db` applies Alembic migrations and backfills document dates.
-
-In another terminal, upload patch notes:
-
-```bash
+python -m uvicorn app.main:app --reload
+# In another terminal, using the same environment:
 python -m scripts.upload_patch
 ```
 
-API docs: http://127.0.0.1:8000/docs
-
-## API
+`app.init_db` applies migrations. MiniLM downloads on first use. Open the chat at `http://127.0.0.1:8000` or API docs at `/docs`.
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /health` | Check database connectivity |
-| `POST /documents` | Index a document; skip duplicates |
-| `GET /search?question=...` | Retrieve relevant chunks |
-| `POST /ask` | Generate an answer with sources |
-
-```json
-{"question": "What changed about Scrap Grenade damage?"}
-```
+| `GET /health` | Database connectivity |
+| `POST /documents` | Index a document; skip identical content |
+| `GET /search?question=...` | Retrieve chunks |
+| `POST /ask` | Answer with `sources`, `session_id`, `trace` and `stop_reason` |
 
 ## Evaluation
 
-**15 labeled questions · Recall@3: 1.00 · MRR@3: 0.889** (locally reported results)
-
 ```bash
+python -m evel.run
 python -m eval.evaluate
 python -m unittest discover -s tests -v
 ```
-
-## Trade-offs
-
-- **pgvector** stores embeddings and document metadata in PostgreSQL.
-- **Local models** avoid paid inference APIs but require local compute.
-- Semantic retrieval alone cannot guarantee the latest game-stat value across patches.
