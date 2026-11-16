@@ -10,6 +10,15 @@ class Base(DeclarativeBase):
     pass
 
 
+class ChatTurn(Base):
+    __tablename__ = "chat_turns"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    question: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+
+
 class Document(Base):
     __tablename__ = "documents"
 

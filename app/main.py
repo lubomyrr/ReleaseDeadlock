@@ -1,6 +1,7 @@
 from datetime import date
 from pathlib import Path
 from typing import Annotated
+from uuid import uuid4
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
@@ -12,9 +13,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.chat import answer_question
 from app.database import get_session
 from app.ingestion import ingest_document
-from app.rag import answer_question
 from app.retrieval import search_chunks
 from app.schemas import AskRequest, AskResponse, DocumentCreate, DocumentResponse
 
@@ -89,14 +90,11 @@ async def search(
 @app.post("/ask", response_model=AskResponse)
 async def ask(
     request: AskRequest,
-    session: Annotated[AsyncSession, Depends(get_session)],
 ):
+    session_id = request.session_id or uuid4()
     try:
-        return await answer_question(
-            question=request.question,
-            session=session,
-            top_k=3,
-        )
+        result = await answer_question(question=request.question, session_id=session_id)
+        return {**result, "session_id": session_id}
     except (httpx.TimeoutException, TimeoutError) as exc:
         raise HTTPException(status_code=504, detail="Ollama request timed out") from exc
     except (ConnectionError, httpx.RequestError) as exc:
@@ -104,3 +102,5 @@ async def ask(
     except ResponseError as exc:
         detail = "Ollama model unavailable" if exc.status_code == 404 else "Ollama generation failed"
         raise HTTPException(status_code=503, detail=detail) from exc
+    except (SQLAlchemyError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="Chat storage unavailable") from exc
